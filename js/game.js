@@ -15,6 +15,15 @@ var rightcaster;
 var blocker = document.getElementById( 'blocker' );
 var instructions = document.getElementById( 'instructions' );
 
+var footsteps = new Audio("sounds/footsteps-1.mp3");
+var backgroundMusic = new Audio("sounds/MartyGotsaPlan.mp3");
+footsteps.loop = true;
+footsteps.muted = true;
+backgroundMusic.loop = true;
+backgroundMusic.play();
+footsteps.play();
+
+
 const movementSpeed = 20;
 const jumpHeight = 50;
 const characterSize = 10;
@@ -55,6 +64,8 @@ if ( havePointerLock ) {
 		instructions.style.display = '';
 
 	};
+
+
 
 	// Hook pointer lock state change events
 	document.addEventListener( 'pointerlockchange', pointerlockchange, false );
@@ -139,6 +150,7 @@ function init() {
 				break;
 
 		}
+		footsteps.muted = !(moveForward || moveLeft || moveBackward || moveRight);
 
 	};
 
@@ -167,6 +179,7 @@ function init() {
 				break;
 
 		}
+		footsteps.muted = !(moveForward || moveLeft || moveBackward || moveRight);
 
 	};
 
@@ -369,7 +382,6 @@ function init() {
 	//
 
 	window.addEventListener( 'resize', onWindowResize, false );
-
 }
 
 function onWindowResize() {
