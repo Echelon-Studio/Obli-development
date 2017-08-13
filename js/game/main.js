@@ -368,18 +368,16 @@ function init() {
 	var grassMap = new THREE.TextureLoader().load( "images/Grass.png" );
 	grassMap.magFilter = THREE.NearestFilter;
 	grassMap.minFilter = THREE.NearestFilter;
-//	var grassMaterial = new THREE.SpriteMaterial( { map: grassMap, color: 0xffffff, fog: true } );
-//	var grass = new THREE.Sprite( grassMaterial );
+	var grassMaterial = new THREE.SpriteMaterial( { map: grassMap, color: 0xffffff, fog: true } );
+	var grass = new THREE.Sprite( grassMaterial );
 	for (var i = 0; i < 10000; i++) {
-		var grassMaterial = new THREE.SpriteMaterial( { map: grassMap, color: 0xffffff, fog: true } );
-		var grass = new THREE.Sprite( grassMaterial );
-		var newGrass = grass;//grass.clone();
+		var newGrass = grass.clone();
 		newGrass.position.x = (Math.random()*5000) - 2500;
 		newGrass.position.z = (Math.random()*5000) - 2500;
 		newGrass.position.y = 0;
 		newGrass.scale.set(6,12,6);
 		scene.add( newGrass );
-		grasses.push([newGrass, Math.random() * 500]);
+		grasses.push(newGrass);
 	}
 
 
@@ -550,12 +548,9 @@ function animate() {
 
 		var isForwardClear = true;
 		//var grassRot = new THREE.Euler(0, 0, Math.cos(time / 2),'XYZ');
-		var grassRot = Math.radians(20);
+		var grassRot = Math.radians(15) * Math.cos(time / 1000);
+		grasses[1].material.rotation = grassRot;
 
-		for (var i = 0; i < grasses.length; i++) {
-			var obj = grasses[i][0];
-			obj.material.rotation = grassRot * Math.cos((time / 1000) + grasses[i][1]);
-		}
 		// TEST RENDER DISTANCE
 	    for (var i = 0; i < objects.length; i++) {
 	    	var obj = objects[i];
