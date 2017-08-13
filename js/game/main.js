@@ -469,7 +469,7 @@ var backgroundSounds = new Audio("sounds/forestAmbience.mp3");
 		backgroundSounds.setVolume(0.25);
 		backgroundSounds.play();
 	});
-	audioLoader.load( 'sounds/MartyGotsAPlan.mp3', function( buffer ) {
+	audioLoader.load( 'sounds/MartyGotsaPlan.mp3', function( buffer ) {
 		backgroundMusic.setBuffer(buffer);
 		backgroundMusic.setLoop(true);
 		backgroundMusic.setVolume(0.5);
