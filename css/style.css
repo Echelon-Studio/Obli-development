@@ -52,3 +52,43 @@ body {
 #instructions span {
 	font-size: 40px;
 }
+
+#name {
+	position: absolute;
+	left: 12%;
+	bottom: 20%;
+	color: #fff;
+	font-size: 400%;
+}
+
+#portrait {
+	position: absolute;
+	right: 10%;
+	bottom: 20%
+}
+
+#portrait img {
+	max-width: 100%;
+	height: auto;
+}
+
+#dialogue-box {
+	background-color: rgba(0,0,0,0.5);
+    border: 3px solid #fff;
+    
+    border-radius: 10px;
+    -webkit-box-shadow: 0px 0px 10px 0px rgba(50, 50, 50, 0.25);
+    -moz-box-shadow: 0px 0px 10px 0px rgba(50, 50, 50, 0.25);
+    box-shadow: 0px 0px 10px 0px rgba(50, 50, 50, 0.25);
+    position: absolute;
+    width: 80%;
+	height: 15%;
+	right: 10%;
+	bottom: 5%
+}
+
+#dialogue-box-text {
+	padding: 20px;
+	color: #eee;
+	font-size: 150%;
+}
