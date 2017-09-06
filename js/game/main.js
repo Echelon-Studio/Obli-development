@@ -233,33 +233,36 @@ function init() {
 
 	var onKeyDown = function ( event ) {
 
-		switch ( event.keyCode ) {
+		if (controlsEnabled) {
+			switch ( event.keyCode ) {
 
-			case 38: // up
-			case 87: // w
-				moveForward = true;
-				break;
+				case 38: // up
+				case 87: // w
+					moveForward = true;
+					break;
 
-			case 37: // left
-			case 65: // a
-				moveLeft = true; break;
+				case 37: // left
+				case 65: // a
+					moveLeft = true; break;
 
-			case 40: // down
-			case 83: // s
-				moveBackward = true;
-				break;
+				case 40: // down
+				case 83: // s
+					moveBackward = true;
+					break;
 
-			case 39: // right
-			case 68: // d
-				moveRight = true;
-				break;
+				case 39: // right
+				case 68: // d
+					moveRight = true;
+					break;
 
-			case 32: // space
-				if ( canJump === true ) velocity.y += (jumpHeight);
-				canJump = false;
-				break;
+				case 32: // space
+					if ( canJump === true ) velocity.y += (jumpHeight);
+					canJump = false;
+					break;
+			}
 
 		}
+		
 		var muted = !(moveForward || moveLeft || moveBackward || moveRight);
 		footsteps.setVolume(muted ? 0 : .5);
 
@@ -619,6 +622,12 @@ function animate() {
 
 
 	if ( controlsEnabled ) {
+
+		velocity.x = 0;
+		velocity.z = 0;
+
+		//velocity.y -= 9.8 * 100.0; // 100.0 = mass
+		velocity.y -= (jumpHeight / 9.8);
 		var controlObject = controls.getObject();
 			camPos = controlObject.position;
 
@@ -699,11 +708,7 @@ function animate() {
 
 
 
-		velocity.x = 0;
-		velocity.z = 0;
-
-		//velocity.y -= 9.8 * 100.0; // 100.0 = mass
-		velocity.y -= (jumpHeight / 9.8);
+		
 
 		if (isForwardClear) {
 			velocity.x = moveDirection.x * movementSpeed;
