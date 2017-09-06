@@ -186,6 +186,9 @@ function NPC(npcObject){
 	var waiting = false;
 
 	this.think = function(delta) {
+		if (speaking == this.object) {
+			return;
+		}
 		var distance = this.goal.distanceTo(this.object.position);
 		if (!waiting) {
 				waiting = true;
@@ -243,7 +246,8 @@ function init() {
 
 				case 37: // left
 				case 65: // a
-					moveLeft = true; break;
+					moveLeft = true; 
+					break;
 
 				case 40: // down
 				case 83: // s
@@ -274,17 +278,17 @@ function init() {
 
 			case 38: // up
 			case 87: // w
-				moveForward = false;
+					moveForward = false;
 				break;
 
 			case 37: // left
 			case 65: // a
-				moveLeft = false;
+					moveLeft = false;
 				break;
 
 			case 40: // down
 			case 83: // s
-				moveBackward = false;
+					moveBackward = false;
 				break;
 
 			case 39: // right
@@ -621,8 +625,6 @@ function animate() {
 
 
 
-	if ( controlsEnabled ) {
-
 		velocity.x = 0;
 		velocity.z = 0;
 
@@ -682,7 +684,7 @@ function animate() {
 	    		var intersected = forwardcaster.intersectObject(obj, true);
 	    		isForwardClear = (intersected.length == 0);
 	    		if (!isForwardClear) {
-	    			//break;
+	    			break;
 	    		}
 	    	}
 
@@ -702,7 +704,7 @@ function animate() {
 			item.image.src = "images/sword-hit.png";
 			//console.log( intersects[0].object.name );
 			controlsEnabled = false;
-			speaking = true;
+			speaking = intersects[0].object;
 			intersects[0].object.speak();
 		}
 
@@ -737,7 +739,6 @@ function animate() {
 
 		prevTime = time;
         stats.end();
-	}
 
 	renderer.render( scene, camera );
 	requestAnimationFrame(animate);
