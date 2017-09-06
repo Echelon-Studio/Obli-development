@@ -26,7 +26,11 @@ var dialogue = {
 
 dialogue.main.style.display = 'none';
 
+var item = {
+	image: document.getElementById( 'item-pic' )
+}
 
+item.image.src = "images/sword.png";
 
 /*
 var footsteps = new Audio("sounds/footsteps-1.mp3");
@@ -293,6 +297,7 @@ function init() {
 
 	var onMouseDown = function ( event ) {
 		clicking = true;
+		item.image.src = "images/sword-swing.png";
 		if (speaking) {
 			stopSpeaking = true;
 		}
@@ -300,6 +305,7 @@ function init() {
 
 	var onMouseUp = function ( event ) {
 		clicking = false;
+		item.image.src = "images/sword.png";
 		if (stopSpeaking) {
 			speaking = false;
 			controlsEnabled	= true;
@@ -438,7 +444,7 @@ function init() {
 	fraknoon.speak = function() {
 		dialogue.name.innerHTML = "Fraknoon";
 		dialogue.portrait.src = "images/FraknoonD.png"
-		dialogue.text.innerHTML = "Give me the chicken! Arr arr arr!";
+		dialogue.text.innerHTML = "Ow, don't hit me!";
 		dialogue.main.style.display = '';
 	}
 	
@@ -454,7 +460,7 @@ function init() {
 	fraknoon2.speak = function() {
 		dialogue.name.innerHTML = "Fraknoon2";
 		dialogue.portrait.src = "images/FraknoonD.png"
-		dialogue.text.innerHTML = "Hey bub!";
+		dialogue.text.innerHTML = "You fokin wot m8!";
 		dialogue.main.style.display = '';
 	}
 
@@ -684,6 +690,7 @@ function animate() {
 
 		// TODO: NPC dialog
 		if (intersects.length > 0 && clicking && !stopSpeaking && intersects[0].distance < 3 ) {
+			item.image.src = "images/sword-hit.png";
 			//console.log( intersects[0].object.name );
 			controlsEnabled = false;
 			speaking = true;

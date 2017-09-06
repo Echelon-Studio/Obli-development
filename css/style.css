@@ -61,10 +61,21 @@ body {
 	font-size: 400%;
 }
 
+#item-box {
+	position: absolute;
+	bottom: -10px;
+	right: 0px;
+}
+
+#item-pic img {
+	max-width: 100%;
+	height: auto;
+}
+
 #portrait-box {
 	position: absolute;
 	right: 10%;
-	bottom: 20%
+	bottom: 20%;
 }
 
 #portrait img {
