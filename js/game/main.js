@@ -17,6 +17,16 @@ var rightcaster;
 
 var blocker = document.getElementById( 'blocker' );
 var instructions = document.getElementById( 'instructions' );
+var dialogue = {
+	main: document.getElementById( 'dialogue' ),
+	name: document.getElementById( 'name' ),
+	portrait: document.getElementById( 'portrait' ),
+	text: document.getElementById( 'dialogue-box-text' )
+}
+
+dialogue.main.style.display = 'none';
+
+
 
 /*
 var footsteps = new Audio("sounds/footsteps-1.mp3");
@@ -52,7 +62,7 @@ var renderDistance = 750;
 
 
 const movementSpeed = 30;
-const jumpHeight = 50;
+const jumpHeight = 75;
 const characterSize = 10;
 
 var stats = new Stats();
@@ -125,6 +135,8 @@ if ( havePointerLock ) {
 
 
 var controlsEnabled = false;
+var speaking = false;
+var stopSpeaking = false;
 
 var clicking = false;
 var moveForward = false;
@@ -173,7 +185,7 @@ function NPC(npcObject){
 		var distance = this.goal.distanceTo(this.object.position);
 		if (!waiting) {
 				waiting = true;
-				console.log(this.object + " has began waiting");
+				//console.log(this.object + " has began waiting");
 				lastTime = performance.now();
 				waitTime = random(NPCMinWaitTime, NPCMaxWaitTime);
 		} else {
@@ -181,7 +193,7 @@ function NPC(npcObject){
 				if (performance.now() - lastTime >= waitTime) {
 					waiting = false;
 					generateGoal(this.goal, this.object.position);
-					console.log(this.object + " stopped waiting");
+					//console.log(this.object + " stopped waiting");
 				}
 			} else {
 				var direction = (new THREE.Vector3()).copy(this.object.position);
@@ -280,12 +292,20 @@ function init() {
 	};
 
 	var onMouseDown = function ( event ) {
-		console.log("CLICK");
 		clicking = true;
+		if (speaking) {
+			stopSpeaking = true;
+		}
 	}
 
 	var onMouseUp = function ( event ) {
 		clicking = false;
+		if (stopSpeaking) {
+			speaking = false;
+			controlsEnabled	= true;
+			dialogue.main.style.display = 'none';
+			stopSpeaking = false;
+		}
 	}
 
 	document.addEventListener( 'keydown', onKeyDown, false );
@@ -415,6 +435,13 @@ function init() {
 	NPCs.push(new NPC(fraknoon));
 	NPCObjects.push( fraknoon );
 	fraknoon.name = "fraknoon";
+	fraknoon.speak = function() {
+		dialogue.name.innerHTML = "Fraknoon";
+		dialogue.portrait.src = "images/FraknoonD.png"
+		dialogue.text.innerHTML = "Give me the chicken! Arr arr arr!";
+		dialogue.main.style.display = '';
+	}
+	
 
 	var fraknoon2 = new THREE.Sprite( fraknoonMaterial );
 	fraknoon2.scale.set(16,16,16);
@@ -424,6 +451,12 @@ function init() {
 	NPCs.push(new NPC(fraknoon2));
 	NPCObjects.push( fraknoon2);
 	fraknoon2.name = "fraknoon2";
+	fraknoon2.speak = function() {
+		dialogue.name.innerHTML = "Fraknoon2";
+		dialogue.portrait.src = "images/FraknoonD.png"
+		dialogue.text.innerHTML = "Hey bub!";
+		dialogue.main.style.display = '';
+	}
 
 	var grassMap = new THREE.TextureLoader().load( "images/Grass.png" );
 	grassMap.magFilter = THREE.NearestFilter;
@@ -607,6 +640,7 @@ function animate() {
 		adjustedDirection.copy(moveDirection);
 		adjustedDirection.applyQuaternion(controlObject.quaternion);
 		forwardcaster.ray.origin = (camPos);
+		//forwardcaster.ray.origin.y -= 5;
 		forwardcaster.ray.direction = (adjustedDirection);
 
 		var time = performance.now();
@@ -637,6 +671,8 @@ function animate() {
 	    		}
 	    	}
 
+
+
 	    }
 
 		var intersections 		= raycaster.intersectObjects( objects );
@@ -647,7 +683,12 @@ function animate() {
 		var intersects = facecaster.intersectObjects( NPCObjects );
 
 		// TODO: NPC dialog
-		if (intersects.length > 0 && clicking && intersects[0].distance < 3 ) console.log( "Hi, this is " + intersects[0].object.name );
+		if (intersects.length > 0 && clicking && !stopSpeaking && intersects[0].distance < 3 ) {
+			//console.log( intersects[0].object.name );
+			controlsEnabled = false;
+			speaking = true;
+			intersects[0].object.speak();
+		}
 
 
 
