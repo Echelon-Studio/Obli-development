@@ -8,6 +8,7 @@ body {
 	margin: 0;
 	overflow: hidden;
 	font-family: arial;
+	-user-select: none;
 }
 
 #blocker {
@@ -19,6 +20,14 @@ body {
 
 	background-color: rgba(0,0,0,0.5);
 
+}
+
+*.unselectable {
+	-moz-user-select: -moz-none;
+	-khtml-user-select: none;
+	-webkit-user-select: none;
+	-ms-user-select: none;
+	-user-select: none;
 }
 
 #instructions {
@@ -97,6 +106,7 @@ body {
 	right: 10%;
 	bottom: 5%
 }
+
 
 #dialogue-box-text {
 	padding: 20px;

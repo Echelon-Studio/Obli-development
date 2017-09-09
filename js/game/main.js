@@ -1,7 +1,4 @@
 (function(){
-var camera, scene, renderer;
-var geometry, material, mesh;
-var controls;
 
 var objects = [];
 var NPCs = [];
@@ -54,6 +51,10 @@ footsteps.muted = true;
 backgroundMusic.loop = true;
 backgroundSounds.loop = true;
 
+var camera, scene, renderer;
+var geometry, material, mesh;
+var controls;
+var controlsEnabled = false;
 
 
 
@@ -73,72 +74,75 @@ var stats = new Stats();
 stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
 document.body.appendChild(stats.dom);
 
+
 // http://www.html5rocks.com/en/tutorials/pointerlock/intro/
 
-var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
+var pointerlocksetup = (function(){
+	var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
 
-if ( havePointerLock ) {
+	if ( havePointerLock ) {
 
-	var element = document.body;
+		var element = document.body;
 
-	var pointerlockchange = function ( event ) {
+		var pointerlockchange = function ( event ) {
 
-		if ( document.pointerLockElement === element || document.mozPointerLockElement === element || document.webkitPointerLockElement === element ) {
+			if ( document.pointerLockElement === element || document.mozPointerLockElement === element || document.webkitPointerLockElement === element ) {
 
-			controlsEnabled = true;
-			controls.enabled = true;
+				controlsEnabled = true;
+				controls.enabled = true;
 
-			blocker.style.display = 'none';
+				blocker.style.display = 'none';
 
-		} else {
+			} else {
 
-			controls.enabled = false;
+				controls.enabled = false;
 
-			blocker.style.display = '-webkit-box';
-			blocker.style.display = '-moz-box';
-			blocker.style.display = 'box';
+				blocker.style.display = '-webkit-box';
+				blocker.style.display = '-moz-box';
+				blocker.style.display = 'box';
+
+				instructions.style.display = '';
+
+			}
+
+		};
+
+		var pointerlockerror = function ( event ) {
 
 			instructions.style.display = '';
 
-		}
-
-	};
-
-	var pointerlockerror = function ( event ) {
-
-		instructions.style.display = '';
-
-	};
+		};
 
 
 
-	// Hook pointer lock state change events
-	document.addEventListener( 'pointerlockchange', pointerlockchange, false );
-	document.addEventListener( 'mozpointerlockchange', pointerlockchange, false );
-	document.addEventListener( 'webkitpointerlockchange', pointerlockchange, false );
+		// Hook pointer lock state change events
+		document.addEventListener( 'pointerlockchange', pointerlockchange, false );
+		document.addEventListener( 'mozpointerlockchange', pointerlockchange, false );
+		document.addEventListener( 'webkitpointerlockchange', pointerlockchange, false );
 
-	document.addEventListener( 'pointerlockerror', pointerlockerror, false );
-	document.addEventListener( 'mozpointerlockerror', pointerlockerror, false );
-	document.addEventListener( 'webkitpointerlockerror', pointerlockerror, false );
+		document.addEventListener( 'pointerlockerror', pointerlockerror, false );
+		document.addEventListener( 'mozpointerlockerror', pointerlockerror, false );
+		document.addEventListener( 'webkitpointerlockerror', pointerlockerror, false );
 
-	instructions.addEventListener( 'click', function ( event ) {
+		instructions.addEventListener( 'click', function ( event ) {
 
-		instructions.style.display = 'none';
+			instructions.style.display = 'none';
 
-		// Ask the browser to lock the pointer
-		element.requestPointerLock = element.requestPointerLock || element.mozRequestPointerLock || element.webkitRequestPointerLock;
-		element.requestPointerLock();
+			// Ask the browser to lock the pointer
+			element.requestPointerLock = element.requestPointerLock || element.mozRequestPointerLock || element.webkitRequestPointerLock;
+			element.requestPointerLock();
 
-	}, false );
+		}, false );
 
-} else {
+	} else {
 
-	instructions.innerHTML = 'Your browser doesn\'t seem to support Pointer Lock API';
+		instructions.innerHTML = 'Your browser doesn\'t seem to support Pointer Lock API';
 
-}
+	}
+
+});
 
 
-var controlsEnabled = false;
 var speaking = false;
 var stopSpeaking = false;
 
@@ -186,6 +190,9 @@ function NPC(npcObject){
 	var waiting = false;
 
 	this.think = function(delta) {
+		if (speaking == this.object) {
+			return;
+		}
 		var distance = this.goal.distanceTo(this.object.position);
 		if (!waiting) {
 				waiting = true;
@@ -231,6 +238,8 @@ function init() {
 	controls = new THREE.PointerLockControls( camera );
 	scene.add( controls.getObject() );
 
+	pointerlocksetup();
+
 	var onKeyDown = function ( event ) {
 
 		if (controlsEnabled) {
@@ -243,7 +252,8 @@ function init() {
 
 				case 37: // left
 				case 65: // a
-					moveLeft = true; break;
+					moveLeft = true; 
+					break;
 
 				case 40: // down
 				case 83: // s
@@ -274,17 +284,17 @@ function init() {
 
 			case 38: // up
 			case 87: // w
-				moveForward = false;
+					moveForward = false;
 				break;
 
 			case 37: // left
 			case 65: // a
-				moveLeft = false;
+					moveLeft = false;
 				break;
 
 			case 40: // down
 			case 83: // s
-				moveBackward = false;
+					moveBackward = false;
 				break;
 
 			case 39: // right
@@ -646,8 +656,6 @@ function animate() {
 
 
 
-	if ( controlsEnabled ) {
-
 		velocity.x = 0;
 		velocity.z = 0;
 
@@ -655,6 +663,7 @@ function animate() {
 		velocity.y -= (jumpHeight / 9.8);
 		var controlObject = controls.getObject();
 			camPos = controlObject.position;
+
 
 
 
@@ -707,7 +716,7 @@ function animate() {
 	    		var intersected = forwardcaster.intersectObject(obj, true);
 	    		isForwardClear = (intersected.length == 0);
 	    		if (!isForwardClear) {
-	    			//break;
+	    			break;
 	    		}
 	    	}
 
@@ -726,6 +735,8 @@ function animate() {
 		if (intersects.length > 0 && clicking && !stopSpeaking && intersects[0].distance < 3 ) {
 			item.image.src = "images/sword-hit.png";
 			//console.log( intersects[0].object.name );
+			controlsEnabled = false;
+			speaking = intersects[0].object;
 			intersects[0].object.speak();
 		}
 
@@ -760,7 +771,6 @@ function animate() {
 
 		prevTime = time;
         stats.end();
-	}
 
 	renderer.render( scene, camera );
 	requestAnimationFrame(animate);
