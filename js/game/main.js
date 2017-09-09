@@ -262,7 +262,7 @@ function init() {
 			}
 
 		}
-		
+
 		var muted = !(moveForward || moveLeft || moveBackward || moveRight);
 		footsteps.setVolume(muted ? 0 : .5);
 
@@ -432,40 +432,65 @@ function init() {
 		}
 	);
 
-	var fraknoonMap = new THREE.TextureLoader().load( "images/Fraknoon2.png" );
-	//fraknoonMap.magFilter = THREE.NearestFilter;
-	//fraknoonMap.minFilter = THREE.NearestFilter;
-	var fraknoonMaterial = new THREE.SpriteMaterial( { map: fraknoonMap, color: 0xffffff, fog: true } );
-	var fraknoon = new THREE.Sprite( fraknoonMaterial );
-	fraknoon.scale.set(16,16,16);
-	fraknoon.position.y = 8;
-	fraknoon.position.z = -20;
-	scene.add(fraknoon);
-	NPCs.push(new NPC(fraknoon));
-	NPCObjects.push( fraknoon );
-	fraknoon.name = "fraknoon";
+	//NPCs
+
+	function loadcreature(name, image, x, y, scale) {
+		var creatureMap = new THREE.TextureLoader().load( image );
+		//creatureMap.magFilter = THREE.NearestFilter;
+		//creatureMap.minFilter = THREE.NearestFilter;
+		var creatureMaterial = new THREE.SpriteMaterial( { map: creatureMap, color: 0xffffff, fog: true } );
+		var creature = new THREE.Sprite( creatureMaterial );
+		creature.scale.set(scale, scale, scale);
+		creature.position.y = scale / 2;
+		creature.position.z = x;
+		creature.position.x = y;
+		scene.add(creature);
+		NPCs.push(new NPC(creature));
+		NPCObjects.push( creature );
+		creature.name = name;
+		return creature;
+	}
+
+
+
+	var fraknoon = loadcreature("fraknoon", "images/Fraknoon2.png", -30, 0, 16)
 	fraknoon.speak = function() {
+		controlsEnabled = false;
+		speaking = true;
 		dialogue.name.innerHTML = "Fraknoon";
 		dialogue.portrait.src = "images/FraknoonD.png"
 		dialogue.text.innerHTML = "Ow, don't hit me!";
 		dialogue.main.style.display = '';
 	}
+
+	var shane = loadcreature("Shane", "images/Shane.png", 50, 0, 16)
+	//shane.health = 50;
+	shane.speak = function() {
+		//
+	}
+
+	//for (var i = 0; i < 1; i++) {
+		//var bubdergle = loadcreature("Bubdergle", "images/Bubdergle.png", (Math.random()*500) - 250, (Math.random()*500) - 250, 10)
+		//bubdergle.health = 10;
+		//bubdergle.speak = function() {
+			//
+		//}
+	//}
+
 	
 
-	var fraknoon2 = new THREE.Sprite( fraknoonMaterial );
-	fraknoon2.scale.set(16,16,16);
-	fraknoon2.position.y = 8;
-	fraknoon2.position.z = -40;
-	scene.add(fraknoon2);
-	NPCs.push(new NPC(fraknoon2));
-	NPCObjects.push( fraknoon2);
-	fraknoon2.name = "fraknoon2";
-	fraknoon2.speak = function() {
-		dialogue.name.innerHTML = "Fraknoon2";
-		dialogue.portrait.src = "images/FraknoonD.png"
-		dialogue.text.innerHTML = "You fokin wot m8!";
-		dialogue.main.style.display = '';
+	var gorgo = loadcreature("gorgo", "images/gorgo.png", 0, -100, 30)
+	//gorgo.health = 1000;
+	gorgo.speak = function() {
+		//gorgo.health -= 1;
+		//if (gorgo.health == 0) {
+		//	scene.remove(gorgo)
+		//}
 	}
+
+
+
+	//Grass
 
 	var grassMap = new THREE.TextureLoader().load( "images/Grass.png" );
 	grassMap.magFilter = THREE.NearestFilter;
@@ -701,8 +726,6 @@ function animate() {
 		if (intersects.length > 0 && clicking && !stopSpeaking && intersects[0].distance < 3 ) {
 			item.image.src = "images/sword-hit.png";
 			//console.log( intersects[0].object.name );
-			controlsEnabled = false;
-			speaking = true;
 			intersects[0].object.speak();
 		}
 
