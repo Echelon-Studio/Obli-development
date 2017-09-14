@@ -1,6 +1,7 @@
 // http://www.html5rocks.com/en/tutorials/pointerlock/intro/
 
-var pointerlocksetup = (function(){
+var pointerlocksetup = (function(controls){
+	var instructions = document.getElementById( 'instructions' );
 	var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
 
 	if ( havePointerLock ) {
@@ -11,7 +12,7 @@ var pointerlocksetup = (function(){
 
 			if ( document.pointerLockElement === element || document.mozPointerLockElement === element || document.webkitPointerLockElement === element ) {
 
-				controlsEnabled = true;
+				controls.canMove = true
 				controls.enabled = true;
 
 				blocker.style.display = 'none';

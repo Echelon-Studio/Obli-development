@@ -13,7 +13,7 @@ var leftcaster;
 var rightcaster;
 
 var blocker = document.getElementById( 'blocker' );
-var instructions = document.getElementById( 'instructions' );
+
 var dialogue = {
 	main: document.getElementById( 'dialogue' ),
 	name: document.getElementById( 'name' ),
@@ -54,17 +54,8 @@ backgroundSounds.loop = true;
 var camera, scene, renderer;
 var geometry, material, mesh;
 var controls;
-var controlsEnabled = false;
-
-
-
-
-
-
-
 
 var renderDistance = 750;
-
 
 const movementSpeed = 30;
 const jumpHeight = 75;
@@ -73,75 +64,6 @@ const characterSize = 10;
 var stats = new Stats();
 stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
 document.body.appendChild(stats.dom);
-
-
-// http://www.html5rocks.com/en/tutorials/pointerlock/intro/
-
-var pointerlocksetup = (function(){
-	var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
-
-	if ( havePointerLock ) {
-
-		var element = document.body;
-
-		var pointerlockchange = function ( event ) {
-
-			if ( document.pointerLockElement === element || document.mozPointerLockElement === element || document.webkitPointerLockElement === element ) {
-
-				controlsEnabled = true;
-				controls.enabled = true;
-
-				blocker.style.display = 'none';
-
-			} else {
-
-				controls.enabled = false;
-
-				blocker.style.display = '-webkit-box';
-				blocker.style.display = '-moz-box';
-				blocker.style.display = 'box';
-
-				instructions.style.display = '';
-
-			}
-
-		};
-
-		var pointerlockerror = function ( event ) {
-
-			instructions.style.display = '';
-
-		};
-
-
-
-		// Hook pointer lock state change events
-		document.addEventListener( 'pointerlockchange', pointerlockchange, false );
-		document.addEventListener( 'mozpointerlockchange', pointerlockchange, false );
-		document.addEventListener( 'webkitpointerlockchange', pointerlockchange, false );
-
-		document.addEventListener( 'pointerlockerror', pointerlockerror, false );
-		document.addEventListener( 'mozpointerlockerror', pointerlockerror, false );
-		document.addEventListener( 'webkitpointerlockerror', pointerlockerror, false );
-
-		instructions.addEventListener( 'click', function ( event ) {
-
-			instructions.style.display = 'none';
-
-			// Ask the browser to lock the pointer
-			element.requestPointerLock = element.requestPointerLock || element.mozRequestPointerLock || element.webkitRequestPointerLock;
-			element.requestPointerLock();
-
-		}, false );
-
-	} else {
-
-		instructions.innerHTML = 'Your browser doesn\'t seem to support Pointer Lock API';
-
-	}
-
-});
-
 
 var speaking = false;
 var stopSpeaking = false;
@@ -238,11 +160,11 @@ function init() {
 	controls = new THREE.PointerLockControls( camera );
 	scene.add( controls.getObject() );
 
-	pointerlocksetup();
+	pointerlocksetup(controls);
 
 	var onKeyDown = function ( event ) {
 
-		if (controlsEnabled) {
+		if (controls.canMove) {
 			switch ( event.keyCode ) {
 
 				case 38: // up
@@ -321,7 +243,7 @@ function init() {
 		item.image.src = "images/sword.png";
 		if (stopSpeaking) {
 			speaking = false;
-			controlsEnabled	= true;
+			controls.canMove = true;
 			dialogue.main.style.display = 'none';
 			stopSpeaking = false;
 		}
@@ -347,36 +269,6 @@ function init() {
 	ground.receiveShadow = true;
 	scene.add( ground );
 
-	// other floor 
-
-	/*
-	geometry = new THREE.PlaneGeometry( 2000, 2000, 100, 100 );
-	geometry.rotateX( - Math.PI / 2 );
-
-	for ( var i = 0, l = geometry.vertices.length; i < l; i ++ ) {
-
-		var vertex = geometry.vertices[ i ];
-		vertex.x += Math.random() * 20 - 10;
-		vertex.y += Math.random() * 2;
-		vertex.z += Math.random() * 20 - 10;
-
-	}
-
-	for ( var i = 0, l = geometry.faces.length; i < l; i ++ ) {
-
-		var face = geometry.faces[ i ];
-		face.vertexColors[ 0 ] = new THREE.Color().setHSL( Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
-		face.vertexColors[ 1 ] = new THREE.Color().setHSL( Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
-		face.vertexColors[ 2 ] = new THREE.Color().setHSL( Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
-
-	}
-
-	material = new THREE.MeshBasicMaterial( { vertexColors: THREE.VertexColors } );
-
-	mesh = new THREE.Mesh( geometry, material );
-	scene.add( mesh );
-	*/
-
 	// objects
 
 	var trunk = new THREE.MeshPhongMaterial( { color: 0x7f3300, shininess: 30 } );
@@ -394,7 +286,7 @@ function init() {
 			tree = object;
 			tree.children[1].material = trunk;
 			tree.children[0].material = leaf;
-			for (var i = 0; i < 1000; i++) {
+			for (var i = 0; i < 600; i++) {
 				var newTree = tree.clone();
 				newTree.castShadow = true;
 				rScale = (Math.random()*20) + 5;
@@ -417,7 +309,7 @@ function init() {
 		function ( object ) {
 			castle = object;
 			
-			console.log(castle.children);
+			//console.log(castle.children);
 
 			castle.children[0].material = castleMaterial;
 			var origin = new THREE.Vector3();
@@ -465,7 +357,7 @@ function init() {
 
 	var fraknoon = loadcreature("fraknoon", "images/Fraknoon2.png", -30, 0, 16)
 	fraknoon.speak = function() {
-		controlsEnabled = false;
+		controls.canMove = false
 		speaking = true;
 		dialogue.name.innerHTML = "Fraknoon";
 		dialogue.portrait.src = "images/FraknoonD.png"
@@ -507,7 +399,7 @@ function init() {
 	grassMap.minFilter = THREE.NearestFilter;
 	var grassMaterial = new THREE.SpriteMaterial( { map: grassMap, color: 0xffffff, fog: true } );
 	var grass = new THREE.Sprite( grassMaterial );
-	for (var i = 0; i < 10000; i++) {
+	for (var i = 0; i < 1000; i++) {
 		var newGrass = grass.clone();
 		newGrass.position.x = (Math.random()*5000) - 2500;
 		newGrass.position.z = (Math.random()*5000) - 2500;
@@ -637,18 +529,18 @@ function animNPCs(){
 
 }
 
-	var forwardVector = new THREE.Vector3(0, 0, -1);
-	var backwardVector = new THREE.Vector3(0, 0, 1);
-	var leftVector = new THREE.Vector3(-1, 0, 0);
-	var rightVector = new THREE.Vector3(1, 0, 0);
-	var camPos = new THREE.Vector3();
-	var moveDirection = new THREE.Vector3();
-	var adjustedDirection = new THREE.Vector3();
-	var forwardcaster = new THREE.Raycaster(camPos, adjustedDirection, 0, characterSize);
+var forwardVector = new THREE.Vector3(0, 0, -1);
+var backwardVector = new THREE.Vector3(0, 0, 1);
+var leftVector = new THREE.Vector3(-1, 0, 0);
+var rightVector = new THREE.Vector3(1, 0, 0);
+var camPos = new THREE.Vector3();
+var moveDirection = new THREE.Vector3();
+var adjustedDirection = new THREE.Vector3();
+var forwardcaster = new THREE.Raycaster(camPos, adjustedDirection, 0, characterSize);
 
-	Math.radians = function(degrees) {
-  		return degrees * Math.PI / 180;
-	};
+Math.radians = function(degrees) {
+	return degrees * Math.PI / 180;
+};
 
 function animate() {
 
@@ -666,63 +558,69 @@ function animate() {
 
 
 
+		if (controls.canMove) {
+			raycaster.ray.origin.copy( controlObject.position );
+			//raycaster.ray.origin.y -= 5;
+			moveDirection.set(0, 0, 0);
+			
+			if (moveForward) {
+				moveDirection.z += -1;
+			}
+			if (moveBackward) {
+				moveDirection.z += 1;
+			}
+			if (moveLeft) {
+				moveDirection.x += -1;
+			}
+			if (moveRight) {
+				moveDirection.x += 1;
+			}
 
-		raycaster.ray.origin.copy( controlObject.position );
-		//raycaster.ray.origin.y -= 5;
-		moveDirection.set(0, 0, 0);
+
+
+			adjustedDirection.copy(moveDirection);
+			adjustedDirection.applyQuaternion(controlObject.quaternion);
+			forwardcaster.ray.origin = (camPos);
+			//forwardcaster.ray.origin.y -= 5;
+			forwardcaster.ray.direction = (adjustedDirection);
+
+			var isForwardClear = true;
+			// TEST RENDER DISTANCE
+		    for (var i = 0; i < objects.length; i++) {
+		    	var obj = objects[i];
+		    	var pos = obj.position;
+		    	var distance = pos.distanceTo(controlObject.position);
+		    	var canRender = (distance < renderDistance);
+		    	//obj.visible = canRender;
+		    	if (canRender && isForwardClear) {
+		    		var intersected = forwardcaster.intersectObject(obj, true);
+		    		isForwardClear = (intersected.length == 0);
+		    		if (!isForwardClear) {
+		    			break;
+		    		}
+		    	}
+		    }
+			if (isForwardClear) {
+				velocity.x = moveDirection.x * movementSpeed;
+				velocity.z = moveDirection.z * movementSpeed;
+			}
+
+		}
+
 		
-		if (moveForward) {
-			moveDirection.z += -1;
-		}
-		if (moveBackward) {
-			moveDirection.z += 1;
-		}
-		if (moveLeft) {
-			moveDirection.x += -1;
-		}
-		if (moveRight) {
-			moveDirection.x += 1;
-		}
-
-
-
-		adjustedDirection.copy(moveDirection);
-		adjustedDirection.applyQuaternion(controlObject.quaternion);
-		forwardcaster.ray.origin = (camPos);
-		//forwardcaster.ray.origin.y -= 5;
-		forwardcaster.ray.direction = (adjustedDirection);
-
 		var time = performance.now();
 		var delta = ( time - prevTime ) / 1000;
+		
 
 		for (var i = 0; i < NPCs.length; i++) {
 			NPCs[i].think(delta);
 		}
 
 
-		var isForwardClear = true;
 		//var grassRot = new THREE.Euler(0, 0, Math.cos(time / 2),'XYZ');
 		var grassRot = Math.radians(15) * Math.cos(time / 1000);
 		grasses[1].material.rotation = grassRot;
 
-		// TEST RENDER DISTANCE
-	    for (var i = 0; i < objects.length; i++) {
-	    	var obj = objects[i];
-	    	var pos = obj.position;
-	    	var distance = pos.distanceTo(controlObject.position);
-	    	var canRender = (distance < renderDistance);
-	    	//obj.visible = canRender;
-	    	if (canRender && isForwardClear) {
-	    		var intersected = forwardcaster.intersectObject(obj, true);
-	    		isForwardClear = (intersected.length == 0);
-	    		if (!isForwardClear) {
-	    			break;
-	    		}
-	    	}
-
-
-
-	    }
 
 		var intersections 		= raycaster.intersectObjects( objects );
 		
@@ -735,19 +633,11 @@ function animate() {
 		if (intersects.length > 0 && clicking && !stopSpeaking && intersects[0].distance < 3 ) {
 			item.image.src = "images/sword-hit.png";
 			//console.log( intersects[0].object.name );
-			controlsEnabled = false;
+			controls.canMove = false
 			speaking = intersects[0].object;
 			intersects[0].object.speak();
 		}
 
-
-
-		
-
-		if (isForwardClear) {
-			velocity.x = moveDirection.x * movementSpeed;
-			velocity.z = moveDirection.z * movementSpeed;
-		}
 
 		if ( isOnObject) {
 			velocity.y = Math.max(0, Math.min(velocity.y, (jumpHeight)));
