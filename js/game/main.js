@@ -1,39 +1,12 @@
 (function(){
 
 var objects = [];
-var NPCs = [];
-var NPCObjects = [];
 var grasses = [];
 
 var raycaster;
 var facecaster;
-var	forwardcaster;
-var backcaster;
-var leftcaster;
-var rightcaster;
 
 var blocker = document.getElementById( 'blocker' );
-
-var dialogue = {
-	main: document.getElementById( 'dialogue' ),
-	name: document.getElementById( 'name' ),
-	portrait: document.getElementById( 'portrait' ),
-	text: document.getElementById( 'dialogue-box-text' )
-}
-
-dialogue.main.style.display = 'none';
-
-var item = {
-	image: document.getElementById( 'item-pic' )
-}
-
-item.image.src = "images/sword.png";
-
-/*
-var footsteps = new Audio("sounds/footsteps-1.mp3");
-var backgroundMusic = new Audio("sounds/MartyGotsaPlan.mp3");
-var backgroundSounds = new Audio("sounds/forestAmbience.mp3");
-*/
 
 //Create an AudioListener and add it to the camera
 var listener = new THREE.AudioListener();
@@ -65,84 +38,35 @@ var stats = new Stats();
 stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
 document.body.appendChild(stats.dom);
 
-var speaking = false;
-var stopSpeaking = false;
+var currentDialog = null;
 
-var clicking = false;
+// clicking is a state. 0 for mouse up edge, 1 for mouse up idle, 2 for mouse Down edge, 3 for mouse Down idle
+var clicking = 0;
 var moveForward = false;
 var moveBackward = false;
 var moveLeft = false;
 var moveRight = false;
 var canJump = false;
 
+
 var prevTime = performance.now();
 var velocity = new THREE.Vector3();
 
+var sword = new Item("Sword", "Weapon", ["images/sword.png", "images/sword-swing.png", "images/sword-hit.png"],
+    function(objectClicked, imageHolder, images){ // onMouseDown
+        if (objectClicked !== null && objectClicked.isNPC !== null) {
+            imageHolder.src = images[2];
+        } else {
+            imageHolder.src = images[1];
+        }
+    },
+    function(objectClicked, imageHolder, images){ // onMouseUp
+        imageHolder.src = images[0];
+    }
+);
 
-
-function random(a, b) {
-	if (a > b) {
-		var t = a;
-		a = b;
-		b = t;
-	}
-	var dist = Math.abs(b - a);
-	return (Math.random() * dist) + a;
-}
-
-var NPCWanderRange = 50;
-var NPCMaxWaitTime = 5000;
-var NPCMinWaitTime = 500;
-
-function NPC(npcObject){
-	this.object = npcObject;
-	this.goal = new THREE.Vector3();
-	var waitTime = random(NPCMinWaitTime, NPCMaxWaitTime);
-	var lastTime = performance.now();
-
-	var generateGoal = function(goal, objectPos){
-		goal.copy(objectPos);
-		
-		goal.x += random(-NPCWanderRange, NPCWanderRange);
-		goal.z += random(-NPCWanderRange, NPCWanderRange);
-
-	}
-	generateGoal(this.goal, this.object.position);
-
-	var waiting = false;
-
-	this.think = function(delta) {
-		if (speaking == this.object) {
-			return;
-		}
-		var distance = this.goal.distanceTo(this.object.position);
-		if (!waiting) {
-				waiting = true;
-				//console.log(this.object + " has began waiting");
-				lastTime = performance.now();
-				waitTime = random(NPCMinWaitTime, NPCMaxWaitTime);
-		} else {
-			if (distance <= 20) {
-				if (performance.now() - lastTime >= waitTime) {
-					waiting = false;
-					generateGoal(this.goal, this.object.position);
-					//console.log(this.object + " stopped waiting");
-				}
-			} else {
-				var direction = (new THREE.Vector3()).copy(this.object.position);
-				direction.sub(this.goal);
-				//direction.normalize();
-				direction.x = -Math.sign(direction.x);
-				direction.z = -Math.sign(direction.z);
-				direction.x = direction.x * Math.min(Math.abs(this.goal.x - this.object.position.x), movementSpeed * delta);
-				direction.z = direction.z * Math.min(Math.abs(this.goal.z - this.object.position.z), movementSpeed * delta);
-				this.object.position.add(direction);
-				//console.log(this.object + "is moving");
-			}
-		}
-	}
-}
-
+var character = new Character();
+character.currentItem = sword;
 
 function init() {
 
@@ -161,6 +85,8 @@ function init() {
 	scene.add( controls.getObject() );
 
 	pointerlocksetup(controls);
+
+
 
 	var onKeyDown = function ( event ) {
 
@@ -230,16 +156,20 @@ function init() {
 
 	};
 
-	var onMouseDown = function ( event ) {
-		clicking = true;
+	var onMouseDown = function ( ) {
+		clicking = 2;
+		/*
 		item.image.src = "images/sword-swing.png";
 		if (speaking) {
 			stopSpeaking = true;
 		}
-	}
+		*/
 
-	var onMouseUp = function ( event ) {
-		clicking = false;
+	};
+
+	var onMouseUp = function ( ) {
+		clicking = 0;
+		/*
 		item.image.src = "images/sword.png";
 		if (stopSpeaking) {
 			speaking = false;
@@ -247,7 +177,8 @@ function init() {
 			dialogue.main.style.display = 'none';
 			stopSpeaking = false;
 		}
-	}
+		*/
+	};
 
 	document.addEventListener( 'keydown', onKeyDown, false );
 	document.addEventListener( 'keyup', onKeyUp, false );
@@ -256,6 +187,8 @@ function init() {
 
 	raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, characterSize);
 	facecaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3(), 0, 1 );
+	facecaster.near = 0;
+	facecaster.far = 1;
 	
 
 	// floor
@@ -336,59 +269,40 @@ function init() {
 
 	//NPCs
 
-	function loadcreature(name, image, x, y, scale) {
+	function loadNPC(name, image, x, z, scale, isSpeaker) {
 		var creatureMap = new THREE.TextureLoader().load( image );
 		//creatureMap.magFilter = THREE.NearestFilter;
 		//creatureMap.minFilter = THREE.NearestFilter;
 		var creatureMaterial = new THREE.SpriteMaterial( { map: creatureMap, color: 0xffffff, fog: true } );
 		var creature = new THREE.Sprite( creatureMaterial );
-		creature.scale.set(scale, scale, scale);
-		creature.position.y = scale / 2;
-		creature.position.z = x;
-		creature.position.x = y;
+		creature.scale.set(scale, scale, 0);
+        creature.position.x = x;
+        creature.position.y = scale / 2;
+		creature.position.z = z;
 		scene.add(creature);
-		NPCs.push(new NPC(creature));
-		NPCObjects.push( creature );
+		var creaturenpc;
+		if (isSpeaker) {
+		    creaturenpc = new Speaker(creature);
+        } else {
+		    creaturenpc = new NPC(creature);
+        }
+        creature.isNPC = true;
+		creature.NPC = creaturenpc;
+		console.log("creature NPC flag set: " + creature.isNPC);
+		NPCs.push(creaturenpc);
+		objects.push(creature);
 		creature.name = name;
-		return creature;
+		return creaturenpc;
 	}
 
 
 
-	var fraknoon = loadcreature("fraknoon", "images/Fraknoon2.png", -30, 0, 16)
-	fraknoon.speak = function() {
-		controls.canMove = false
-		speaking = true;
-		dialogue.name.innerHTML = "Fraknoon";
-		dialogue.portrait.src = "images/FraknoonD.png"
-		dialogue.text.innerHTML = "Ow, don't hit me!";
-		dialogue.main.style.display = '';
-	}
+	var fraknoon = loadNPC("fraknoon", "images/Fraknoon2.png", -30, 0, 16, true);
+	fraknoon.dialog = new Dialog("Fraknoon", "images/FraknoonD.png", "Ow, don't hit me!!!");
 
-	var shane = loadcreature("Shane", "images/Shane.png", 50, 0, 16)
-	//shane.health = 50;
-	shane.speak = function() {
-		//
-	}
+	var shane = loadNPC("Shane", "images/Shane.png", 50, 0, 16);
 
-	//for (var i = 0; i < 1; i++) {
-		//var bubdergle = loadcreature("Bubdergle", "images/Bubdergle.png", (Math.random()*500) - 250, (Math.random()*500) - 250, 10)
-		//bubdergle.health = 10;
-		//bubdergle.speak = function() {
-			//
-		//}
-	//}
-
-	
-
-	var gorgo = loadcreature("gorgo", "images/gorgo.png", 0, -100, 30)
-	//gorgo.health = 1000;
-	gorgo.speak = function() {
-		//gorgo.health -= 1;
-		//if (gorgo.health == 0) {
-		//	scene.remove(gorgo)
-		//}
-	}
+	var gorgo = loadNPC("gorgo", "images/gorgo.png", 0, -100, 20);
 
 
 
@@ -399,7 +313,7 @@ function init() {
 	grassMap.minFilter = THREE.NearestFilter;
 	var grassMaterial = new THREE.SpriteMaterial( { map: grassMap, color: 0xffffff, fog: true } );
 	var grass = new THREE.Sprite( grassMaterial );
-	for (var i = 0; i < 1000; i++) {
+	for (var i = 0; i < 4000; i++) {
 		var newGrass = grass.clone();
 		newGrass.position.x = (Math.random()*5000) - 2500;
 		newGrass.position.z = (Math.random()*5000) - 2500;
@@ -446,39 +360,11 @@ function init() {
 
 	}
 
-	
-
-	//
-
 	renderer = new THREE.WebGLRenderer();
 	renderer.setClearColor( 0x33bbff );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	document.body.appendChild( renderer.domElement );
-
-/*
-	renderer.shadowMap.enabled = true;
-	renderer.shadowMap.type = THREE.PCFShadowMap; // default THREE.PCFShadowMap
-
-	//Create a DirectionalLight and turn on shadows for the light
-	var light = new THREE.DirectionalLight( 0xffffff, 1, 100 );
-	light.position.set( 0, 1, 0); 			//default; light shining from top
-	light.castShadow = true;            // default false
-	scene.add( light );
-
-	//Set up shadow properties for the light
-	light.shadow.mapSize.width = 512;  // default
-	light.shadow.mapSize.height = 512; // default
-	light.shadow.camera.near = 0.5;       // default
-	light.shadow.camera.far = 500      // default
-*/
-	//
-
-/*
-var footsteps = new Audio("sounds/footsteps-1.mp3");
-var backgroundMusic = new Audio("sounds/MartyGotsaPlan.mp3");
-var backgroundSounds = new Audio("sounds/forestAmbience.mp3");
-*/
 
 
 	// setup audio
@@ -510,29 +396,13 @@ var backgroundSounds = new Audio("sounds/forestAmbience.mp3");
 
 function onWindowResize() {
 
-	camera.aspect = window.innerWidth / window.innerHeight;
-	camera.updateProjectionMatrix();
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
 
-	renderer.setSize( window.innerWidth, window.innerHeight );
-
-}
-
-function perp( v ) {
-	var tmp = v.x;
-	v.x = v.z;
-	v.z = tmp;
-	return v;
-}
-
-
-function animNPCs(){
+    renderer.setSize(window.innerWidth, window.innerHeight);
 
 }
 
-var forwardVector = new THREE.Vector3(0, 0, -1);
-var backwardVector = new THREE.Vector3(0, 0, 1);
-var leftVector = new THREE.Vector3(-1, 0, 0);
-var rightVector = new THREE.Vector3(1, 0, 0);
 var camPos = new THREE.Vector3();
 var moveDirection = new THREE.Vector3();
 var adjustedDirection = new THREE.Vector3();
@@ -544,10 +414,10 @@ Math.radians = function(degrees) {
 
 function animate() {
 
+
+
+
     stats.begin();
-
-
-
 		velocity.x = 0;
 		velocity.z = 0;
 
@@ -581,7 +451,6 @@ function animate() {
 			adjustedDirection.copy(moveDirection);
 			adjustedDirection.applyQuaternion(controlObject.quaternion);
 			forwardcaster.ray.origin = (camPos);
-			//forwardcaster.ray.origin.y -= 5;
 			forwardcaster.ray.direction = (adjustedDirection);
 
 			var isForwardClear = true;
@@ -591,10 +460,11 @@ function animate() {
 		    	var pos = obj.position;
 		    	var distance = pos.distanceTo(controlObject.position);
 		    	var canRender = (distance < renderDistance);
+		    	var canCollide = (obj.isNPC == null);
 		    	//obj.visible = canRender;
-		    	if (canRender && isForwardClear) {
+		    	if (canCollide && canRender && isForwardClear) {
 		    		var intersected = forwardcaster.intersectObject(obj, true);
-		    		isForwardClear = (intersected.length == 0);
+		    		isForwardClear = (intersected.length === 0);
 		    		if (!isForwardClear) {
 		    			break;
 		    		}
@@ -618,8 +488,7 @@ function animate() {
 
 
 		//var grassRot = new THREE.Euler(0, 0, Math.cos(time / 2),'XYZ');
-		var grassRot = Math.radians(15) * Math.cos(time / 1000);
-		grasses[1].material.rotation = grassRot;
+		grasses[1].material.rotation = Math.radians(15) * Math.cos(time / 1000);
 
 
 		var intersections 		= raycaster.intersectObjects( objects );
@@ -627,24 +496,47 @@ function animate() {
 		var isOnObject	= intersections.length > 0;
 
 		facecaster.setFromCamera( new THREE.Vector2() , camera, 0, characterSize);
-		var intersects = facecaster.intersectObjects( NPCObjects );
+		var intersects = facecaster.intersectObjects( objects );
+		var objectInFront = null;
+		var interactionObject = null;
+		if (intersects.length > 0) {
+		    objectInFront = intersects[0];
+		    for (var i=0; i < intersects.length; i++) {
+		        console.log(intersects[i]);
+		        if (intersects[i].object.isNPC != null && intersects[i].distance <= DEFAULT_TOOL_DISTANCE){
+		            interactionObject = intersects[i].object;
+		            break;
+                }
+            }
+        }
 
-		// TODO: NPC dialog
-		if (intersects.length > 0 && clicking && !stopSpeaking && intersects[0].distance < 3 ) {
-			item.image.src = "images/sword-hit.png";
-			//console.log( intersects[0].object.name );
-			controls.canMove = false
-			speaking = intersects[0].object;
-			intersects[0].object.speak();
-		}
+		// handle clicking
+        if (clicking === 0) {
+            if (character.currentItem != null) {
+                character.currentItem.onMouseUp(objectInFront);
+            }
+            clicking = 1;
+        } else if (clicking === 2) {
+		    // do npc dialog
 
+            if (currentDialog != null) {
+                currentDialog.hide();
+                currentDialog = null;
+                controls.canMove = true;
+            } else if (interactionObject !== null && interactionObject.NPC instanceof Speaker) {
+                currentDialog = interactionObject.NPC.dialog;
+                currentDialog.show();
+                controls.canMove = false;
+            }  else if (character.currentItem != null) {
+                character.currentItem.onMouseDown(interactionObject);
+            }
+            clicking = 3;
+        }
 
 		if ( isOnObject) {
 			velocity.y = Math.max(0, Math.min(velocity.y, (jumpHeight)));
 			canJump = true;
 		}
-
-		
 
 		controlObject.translateX( velocity.x * delta );
 		controlObject.translateY( velocity.y * delta );
@@ -660,20 +552,14 @@ function animate() {
 		}
 
 		prevTime = time;
-        stats.end();
 
+
+    stats.end();
 	renderer.render( scene, camera );
+
 	requestAnimationFrame(animate);
 }
-
-
-
-
-//backgroundSounds.play();
-//backgroundMusic.play();
-//footsteps.play();
 
 init();
 animate();	
 })();
-
